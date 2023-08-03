@@ -1,4 +1,8 @@
-import React, { createRef } from "react";
+import React, {
+  ChangeEventHandler,
+  createRef,
+  useState,
+} from "react";
 import { PhoneInputProps } from "../types";
 
 export const FunctionalPhoneInput = ({
@@ -9,23 +13,35 @@ export const FunctionalPhoneInput = ({
     createRef<HTMLInputElement>()
   );
 
-  const onInputChange = (index: number, value: string) => {
-    if (value === "") {
-      if (index > 0) {
-        phoneNumberRefs[index - 1].current?.focus();
-      }
-    } else if (
-      value.length === 2 &&
-      index < phoneNumberRefs.length - 1
-    ) {
-      phoneNumberRefs[index + 1].current?.focus();
-    }
+  const [phoneInputValue, setPhoneInputValue] = useState([
+    ...phoneNumber,
+  ]);
 
-    const newPhoneNumber = phoneNumberRefs.map(
-      (ref) => ref.current?.value
-    );
-    phoneNumberChange(newPhoneNumber as string[]);
-  };
+  const onInputChange =
+    (index: number): ChangeEventHandler<HTMLInputElement> =>
+    (e) => {
+      const value = e.target.value;
+      if (Number.isFinite(+value)) {
+        phoneInputValue[index] = value;
+        setPhoneInputValue(phoneInputValue);
+        if (value === "") {
+          //Goes to the previous input on backspace
+          if (index > 0) {
+            phoneNumberRefs[index - 1].current?.focus();
+          }
+        } else if (
+          value.length === 2 &&
+          index < phoneNumberRefs.length - 1
+        ) {
+          phoneNumberRefs[index + 1].current?.focus();
+        }
+
+        const newPhoneNumber = phoneNumberRefs.map(
+          (ref) => ref.current?.value
+        );
+        phoneNumberChange(newPhoneNumber as string[]);
+      }
+    };
 
   return (
     <div className="input-wrap">
@@ -37,13 +53,10 @@ export const FunctionalPhoneInput = ({
               type="text"
               id={`phone-input-${index + 1}`}
               placeholder={index < 3 ? "55" : "5"}
+              value={phoneInputValue[index]}
               maxLength={index < 3 ? 2 : 1}
-              pattern="[0-9]*"
-              inputMode="numeric"
               ref={ref}
-              onChange={(e) =>
-                onInputChange(index, e.target.value)
-              }
+              onChange={onInputChange(index)}
             />
             {index < 3 && (
               <span className="phone-input-dash">-</span>

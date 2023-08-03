@@ -1,29 +1,49 @@
-import React, { createRef, Component } from "react";
+import React, {
+  createRef,
+  Component,
+  ChangeEventHandler,
+} from "react";
 import { PhoneInputProps } from "../types";
 
 export class ClassPhoneInput extends Component<PhoneInputProps> {
+  state = {
+    phoneInputValue: [...this.props.phoneNumber],
+  };
+
   phoneNumberRefs = this.props.phoneNumber.map(() =>
     createRef<HTMLInputElement>()
   );
 
-  onInputChange = (index: number, value: string) => {
-    if (value === "") {
-      if (index > 0) {
-        this.phoneNumberRefs[index - 1].current?.focus();
+  onInputChange =
+    (index: number): ChangeEventHandler<HTMLInputElement> =>
+    (e) => {
+      const value = e.target.value;
+
+      if (Number.isFinite(+value)) {
+        const { phoneInputValue } = this.state;
+
+        phoneInputValue[index] = value;
+        this.setState({ phoneInputValue: phoneInputValue });
+        if (value === "") {
+          if (index > 0) {
+            this.phoneNumberRefs[
+              index - 1
+            ].current?.focus();
+          }
+        } else if (
+          value.length === 2 &&
+          index < this.phoneNumberRefs.length - 1
+        ) {
+          this.phoneNumberRefs[index + 1].current?.focus();
+        }
+        const newPhoneNumber = this.phoneNumberRefs.map(
+          (ref) => ref.current?.value
+        );
+        this.props.phoneNumberChange(
+          newPhoneNumber as string[]
+        );
       }
-    } else if (
-      value.length === 2 &&
-      index < this.phoneNumberRefs.length - 1
-    ) {
-      this.phoneNumberRefs[index + 1].current?.focus();
-    }
-    const newPhoneNumber = this.phoneNumberRefs.map(
-      (ref) => ref.current?.value
-    );
-    this.props.phoneNumberChange(
-      newPhoneNumber as string[]
-    );
-  };
+    };
 
   render() {
     return (
@@ -37,12 +57,9 @@ export class ClassPhoneInput extends Component<PhoneInputProps> {
                 id={`phone-input-${index + 1}`}
                 placeholder={index < 3 ? "55" : "5"}
                 maxLength={index < 3 ? 2 : 1}
-                pattern="[0-9]*"
-                inputMode="numeric"
+                value={this.state.phoneInputValue[index]}
                 ref={ref}
-                onChange={(e) =>
-                  this.onInputChange(index, e.target.value)
-                }
+                onChange={this.onInputChange(index)}
               />
               {index < 3 && (
                 <span className="phone-input-dash">-</span>
